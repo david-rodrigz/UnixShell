@@ -16,6 +16,9 @@ int main() {
   Jobs jobs=newJobs();
   char *prompt=0;
 
+  // check if stdin is a terminal
+  // if it is, enable command history (read from .history file), set the prompt to "$ "
+  // if not, bind the tab key to insert a tab character, redirect readline's output to /dev/null to suppress it
   if (isatty(fileno(stdin))) {
     using_history();
     read_history(".history");
@@ -25,6 +28,7 @@ int main() {
     rl_outstream=fopen("/dev/null","w");
   }
   
+  // read commands from prompt, add to history, parse and interpret the command
   while (!eof) {
     char *line=readline(prompt);
     if (!line)
@@ -37,12 +41,16 @@ int main() {
     freeTree(tree);
   }
 
+  // if stdin is a terminal, write the command history to .history file and clear the history
+  // if not, close the output stream
   if (isatty(fileno(stdin))) {
     write_history(".history");
-    rl_clear_history();
+    clear_history();
   } else {
     fclose(rl_outstream);
   }
+
+  // clean up any remaining resources
   freestateCommand();
   return 0;
 }
