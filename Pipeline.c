@@ -40,6 +40,8 @@ static void execute(Pipeline pipeline, Jobs jobs, int *jobbed, int *eof) {
 
 extern void execPipeline(Pipeline pipeline, Jobs jobs, int *eof) {
   int jobbed=0;
+  // execute the pipeline
+  // this will execute each command in the pipeline in the context of the given jobs, and set jobbed to 1 if the pipeline is a job.
   execute(pipeline,jobs,&jobbed,eof);
   if (!jobbed)
     freePipeline(pipeline);	// for fg builtins, and such

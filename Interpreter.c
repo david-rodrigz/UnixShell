@@ -39,7 +39,11 @@ static void i_sequence(T_sequence t, Sequence sequence) {
 extern void interpretTree(Tree t, int *eof, Jobs jobs) {
   if (!t)
     return;
+  // create a sequence object
+  // this will store the sequence of pipelines that are interpreted from the tree.
   Sequence sequence=newSequence();
+  // traverses the tree, interpreting each node as a command, pipeline, or sequence, and adding it to the sequence object
   i_sequence(t,sequence);
+  // executes each pipeline in the sequence in the context of the given jobs, and sets eof to 1 if the end of the sequence is reached.
   execSequence(sequence,jobs,eof);
 }
