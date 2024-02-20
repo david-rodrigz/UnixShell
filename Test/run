@@ -1,9 +1,27 @@
 #!/bin/bash
 
-prg=./try
+# store etc directory
+etc='/etc'
 
-for t in Test/Test_* ; do
-    echo ${t##*/}
-    $prg <$t/inp 2>&1 >$t/out
-    diff -q -w $t/exp $t/out 2>&1 >/dev/null || echo ${t##*/} failed >&2
+# declare array of simple inputs
+declare -a test_names=('cd' 'pwd' 'ls' 'history')
+
+# for each test name: 
+# create a directory inside Test/ with the name Test_input
+# create an inp file with the input of the command
+# create an exp file with the output of the command
+for name in "${test_names[@]}"
+do
+    mkdir -p Test/Test_$name
+    echo $name > Test/Test_$name/inp
+
 done
+
+
+# prg=./try
+
+# for t in Test/Test_* ; do
+#     echo ${t##*/}
+#     $prg <$t/inp 2>&1 >$t/out
+#     diff -q -w $t/exp $t/out 2>&1 >/dev/null || echo ${t##*/} failed >&2
+# done
