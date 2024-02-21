@@ -3,42 +3,16 @@
 # set the program name
 prg=./try
 
-# print error message function
-print_error() {
-    >&2 echo "Error: $1"
-}
-
-# test sleep function
-run_Test_sleep() {
-    # capture the start time
-    start_time=$(date +%s)
-
-    # run the program with the input redirected from the inp file
-    $prg <$1/inp 2>&1 >$1/out
-
-    # capture the end time
-    end_time=$(date +%s)
-
-    # calculate the difference in seconds
-    seconds_passed=$((end_time - start_time))
-
-    # extract sleep time from inp file
-    sec=$(grep -oP '(?<=sleep )\d+' $1/inp | cut -f1 -d' ')
-
-    # compare seconds_passed with the expected value
-    # if not equal, redirect error message to out file
-    if [ $seconds_passed -ne $sec ]; then
-        echo "$1 failed: Expected $sec seconds, but got $seconds_passed seconds" 2>&1 >>$1/out
+for t in Test/Test_* ; do
+    echo ${t##*/}
+    # $prg <$t/inp 2>&1 >$t/out
+    source $t/test.sh
+    run_${t##*/} $t
+    # diff -q -w $t/exp $t/out 2>&1 >/dev/null || echo FAILED >&2
+    if diff -q -w $t/exp $t/out 2>&1 >/dev/null; then
+        echo "PASSED"
+    else
+        echo "FAILED" >&2
     fi
-}
-
-test_dir="Test_sleep"
-
-# run the test function
-run_$test_dir Test/$test_dir
-
-# for t in Test/Test_* ; do
-#     echo ${t##*/}
-#     $prg <$t/inp 2>&1 >$t/out
-#     diff -q -w $t/exp $t/out 2>&1 >/dev/null || echo ${t##*/} failed >&2
-# done
+    echo ""
+done
