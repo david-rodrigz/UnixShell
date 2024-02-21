@@ -1,24 +1,38 @@
 #!/bin/bash
 
-# store etc directory
-etc='/etc'
+prg=./try
 
-# declare array of simple inputs
-declare -a test_names=('cd' 'pwd' 'ls' 'history')
+# test sleep function
+test_sleep() {
+    echo "Testing sleep function"
 
-# for each test name: 
-# create a directory inside Test/ with the name Test_input
-# create an inp file with the input of the command
-# create an exp file with the output of the command
-for name in "${test_names[@]}"
-do
-    mkdir -p Test/Test_$name
-    echo $name > Test/Test_$name/inp
+    # redirect program input to temporary file
+    echo sleep $1 \; exit  > temp.txt
+    
+    # Capture the start time
+    start_time=$(date +%s)
 
-done
+    # Sleep for 5 seconds
+    echo "Sleeping for $1 seconds"
+    $prg < temp.txt
 
+    # Capture the end time
+    end_time=$(date +%s)
 
-# prg=./try
+    # delete temporary file
+    rm temp.txt
+
+    # Calculate the difference in seconds
+    seconds_passed=$((end_time - start_time))
+
+    if [ $seconds_passed -eq $1 ]; then
+        echo "Sleep test PASSED"
+    else
+        echo "Sleep test FAILED"
+    fi
+}
+
+test_sleep 5
 
 # for t in Test/Test_* ; do
 #     echo ${t##*/}
