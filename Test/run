@@ -1,38 +1,41 @@
 #!/bin/bash
 
+# set the program name
 prg=./try
 
-# test sleep function
-test_sleep() {
-    echo "Testing sleep function"
+# print error message function
+print_error() {
+    >&2 echo "Error: $1"
+}
 
-    # redirect program input to temporary file
-    echo sleep $1 \; exit  > temp.txt
-    
-    # Capture the start time
+# test sleep function
+run_Test_sleep() {
+    # capture the start time
     start_time=$(date +%s)
 
-    # Sleep for 5 seconds
-    echo "Sleeping for $1 seconds"
-    $prg < temp.txt
+    # run the program with the input redirected from the inp file
+    $prg <$1/inp 2>&1 >$1/out
 
-    # Capture the end time
+    # capture the end time
     end_time=$(date +%s)
 
-    # delete temporary file
-    rm temp.txt
-
-    # Calculate the difference in seconds
+    # calculate the difference in seconds
     seconds_passed=$((end_time - start_time))
 
-    if [ $seconds_passed -eq $1 ]; then
-        echo "Sleep test PASSED"
-    else
-        echo "Sleep test FAILED"
+    # extract sleep time from inp file
+    sec=$(grep -oP '(?<=sleep )\d+' $1/inp | cut -f1 -d' ')
+
+    # compare seconds_passed with the expected value
+    # if not equal, redirect error message to out file
+    if [ $seconds_passed -ne $sec ]; then
+        echo "$1 failed: Expected $sec seconds, but got $seconds_passed seconds" 2>&1 >>$1/out
     fi
 }
 
-test_sleep 5
+test_dir="Test_sleep"
+
+# run the test function
+run_$test_dir Test/$test_dir
 
 # for t in Test/Test_* ; do
 #     echo ${t##*/}
