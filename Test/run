@@ -7,6 +7,9 @@ prg=./try
 declare -a test_names=(
     "Test_pwd"
     "Test_sleep"
+    "Test_IO_redirection"
+    "Test_pipeline"
+    "Test_background"
 )
 
 # declare a function for each test
@@ -19,8 +22,7 @@ run_Test_pwd() {
     # set expected value
     pwd >$1/exp
     
-    # run the program with the input redirected from the inp file
-    # redirect the output to the out file
+    # input from the inp file and output to the out file
     $prg <$1/inp 2>&1 >$1/out
 }
 
@@ -35,7 +37,7 @@ run_Test_sleep() {
     # capture the start time
     start_time=$(date +%s)
 
-    # run the program with the input redirected from the inp file
+    # input from the inp file and output to the out file
     $prg <$1/inp 2>&1 >$1/out
 
     # capture the end time
@@ -54,6 +56,53 @@ run_Test_sleep() {
     else
         echo "" >$1/exp
     fi
+}
+
+# IO redirection test
+run_Test_IO_redirection() {
+    # set input value
+    echo "echo "Hello world!" > hello.txt ; cat < hello.txt > hello2.txt ; cat < hello2.txt" >$1/inp
+
+    # set expected value
+    echo "Hello World!" >$1/exp
+
+    # input from the inp file and output to the out file
+    $prg <$1/inp 2>&1 >$1/out
+
+    # remove hello.txt and hello2.txt if they exist
+    rm -f hello.txt hello2.txt
+}
+
+# pipelines test
+run_Test_pipeline() {
+    # set input value
+    echo "pwd | cat ; cd /etc | pwd" >$1/inp
+
+    # set expected value
+    (pwd | cat ; cd /etc | pwd) >$1/exp
+
+    # input from the inp file and output to the out file
+    $prg <$1/inp 2>&1 >$1/out
+
+}
+
+# background test
+run_Test_background() {
+    # set input value
+    echo "echo \"sleep 5 ; echo this message second\" > ${1}/delayed_msg.sh" >$1/inp
+    echo "source ${1}/delayed_msg.sh &" >>$1/inp
+    echo "echo this message first" >>$1/inp
+    echo "wait" >>$1/inp
+
+    # set expected value
+    echo "this message first" >$1/exp
+    echo "this message second" >>$1/exp
+
+    # input from the inp file and output to the out file
+    $prg <$1/inp 2>&1 >$1/out
+
+    # remove delayed_msg.sh if it exists
+    rm -f $1/delayed_msg.sh
 }
 
 # run each test
