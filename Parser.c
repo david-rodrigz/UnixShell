@@ -83,8 +83,10 @@ static T_sequence p_sequence() {
   return sequence;
 }
 
-extern Tree parseTree(char *s) {
+extern Tree parseTree(char *s) { // pass in a sequence of commands that you want to parse
+  // Instantiate the scanner to read through the string s one token at a time.
   scan=newScanner(s);
+  // Start parsing the string into a tree structure
   Tree tree=p_sequence();
   if (curr())
     ERROR("extra characters at end of input");
