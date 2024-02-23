@@ -17,11 +17,37 @@ static char *curr()       { return currScanner(scan); }
 static int   cmp(char *s) { return cmpScanner(scan,s); }
 static int   eat(char *s) { return eatScanner(scan,s); }
 
+static T_redir p_redir();
 static T_word p_word();
 static T_words p_words();
 static T_command p_command();
 static T_pipeline p_pipeline();
 static T_sequence p_sequence();
+
+static T_redir p_redir() {
+  // check that the current token is not null
+  char *s=curr();
+  if (!s)
+    return 0;
+  
+  // create a new redir object
+  T_redir redir=new_redir();
+  redir->input=0;
+  redir->output=0;
+
+  // check for the following cases:
+  // 1. input redirection
+  // 2. output redirection
+  // 3. input and output redirection
+  if (eat("<")) {
+    redir->input=p_word()->s;
+  }
+  if (eat(">")) {
+    redir->output=p_word()->s;
+  }
+
+  return redir;
+}
 
 static T_word p_word() {
   char *s=curr();
@@ -39,7 +65,7 @@ static T_words p_words() {
     return 0;
   T_words words=new_words();
   words->word=word;
-  if (cmp("|") || cmp("&") || cmp(";"))
+  if (cmp("|") || cmp("&") || cmp(";") || cmp("<") || cmp(">"))
     return words;
   words->words=p_words();
   return words;
@@ -52,6 +78,10 @@ static T_command p_command() {
     return 0;
   T_command command=new_command();
   command->words=words;
+  command->redir=0;
+  if (cmp("<") || cmp(">")) {
+    command->redir=p_redir();
+  }
   return command;
 }
 
