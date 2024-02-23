@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #include "Command.h"
 #include "error.h"
@@ -122,10 +123,16 @@ extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
     addJobs(jobs,pipeline);
   }
   int pid=fork();
-  if (pid==-1)
+  if (pid==-1) {
     ERROR("fork() failed");
-  if (pid==0)
+  }
+  else if (pid==0) {
     child(r,fg);
+  }
+  else {
+    // parent process: wait for the child process to finish
+    wait(NULL);
+  }
 }
 
 extern void freeCommand(Command command) {
