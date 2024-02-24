@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "Command.h"
 #include "error.h"
@@ -10,6 +12,8 @@
 typedef struct {
   char *file;
   char **argv;
+  char *inputRedir; 
+  char *outputRedir;
 } *CommandRep;
 
 #define BIARGS CommandRep r, int *eof, Jobs jobs
@@ -36,6 +40,19 @@ BIDEFN(pwd) {
   builtin_args(r,0);
   if (!cwd)
     cwd=getcwd(0,0);
+
+  // check if r has output redirection
+  // if true, create and write to the given filename, return (don't print to stdout)
+  if (r->outputRedir) {
+    int out = open(r->outputRedir, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+    if (out == -1) {
+      ERROR("Failed to open output redirection file");
+      return;
+    }
+    dprintf(out, "%s\n", cwd);
+    close(out);
+    return; // return (don't print to stdout)
+  }
   printf("%s\n",cwd);
 }
 
@@ -94,12 +111,15 @@ static char **getargs(T_words words) {
   return argv;
 }
 
-extern Command newCommand(T_words words) {
+extern Command newCommand(T_command command) {
   CommandRep r=(CommandRep)malloc(sizeof(*r));
   if (!r)
     ERROR("malloc() failed");
-  r->argv=getargs(words);
+  r->argv=getargs(command->words);
   r->file=r->argv[0];
+  // add input and output redirection if they exist
+  r->inputRedir=command->redir?command->redir->input:0;
+  r->outputRedir=command->redir?command->redir->output:0;
   return r;
 }
 
@@ -108,6 +128,29 @@ static void child(CommandRep r, int fg) {
   Jobs jobs=newJobs();
   if (builtin(r,&eof,jobs))
     return;
+
+  // Handle input redirection
+  if (r->inputRedir) {
+    int in = open(r->inputRedir, O_RDONLY);
+    if (in == -1) {
+      ERROR("Failed to open input redirection file");
+      exit(1);
+    }
+    dup2(in, STDIN_FILENO);
+    close(in);
+  }
+
+  // Handle output redirection
+  if (r->outputRedir) {
+    int out = open(r->outputRedir, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
+    if (out == -1) {
+      ERROR("Failed to open output redirection file");
+      exit(1);
+    }
+    dup2(out, STDOUT_FILENO);
+    close(out);
+  }
+
   execvp(r->argv[0],r->argv);
   ERROR("execvp() failed");
   exit(0);
