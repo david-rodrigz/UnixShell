@@ -61,7 +61,7 @@ run_Test_sleep() {
 # IO redirection test
 run_Test_IO_redirection() {
     # set input value
-    echo "echo "Hello world!" > hello.txt ; cat < hello.txt > hello2.txt ; cat < hello2.txt" >$1/inp
+    echo "echo "Hello World!" > hello.txt ; cat < hello.txt > hello2.txt ; cat < hello2.txt" >$1/inp
 
     # set expected value
     echo "Hello World!" >$1/exp

@@ -75,6 +75,11 @@ extern char *currScanner(Scanner scan) {
   return nextScanner(scan);
 }
 
+/**
+ * Check if the current token in the scanner 
+ * matches a given string. If it does, return 1; 
+ * otherwise, return 0.
+*/
 extern int cmpScanner(Scanner scan, char *s) {
   ScannerRep r=scan;
   currScanner(scan);
