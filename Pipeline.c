@@ -55,7 +55,7 @@ static void execute(Pipeline pipeline, Jobs jobs, int *jobbed, int *eof) {
     }
 
     // execute the command
-    execCommand(deq_head_ith(r->processes,i),pipeline,jobs,jobbed,eof,1,currPipeFd,newPipeFd);
+    execCommand(deq_head_ith(r->processes,i),pipeline,jobs,jobbed,eof,r->fg,currPipeFd,newPipeFd);
 
     // set the new pipe as the current pipe
     currPipeFd[0]=newPipeFd[0];
