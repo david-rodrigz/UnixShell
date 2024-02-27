@@ -203,7 +203,7 @@ extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
   if (pid==-1) {
     ERROR("fork() failed");
   }
-  else if (pid==0) {
+  if (pid==0) {
     child(r,fg,currPipeFd,newPipeFd);
   }
   else {
@@ -212,7 +212,11 @@ extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
       close(currPipeFd[0]);
       close(currPipeFd[1]);
     }
-    wait(NULL);
+
+    // if fg is set, wait for the child process to finish
+    if (fg == 1) {
+      wait(NULL);
+    }
   }
 }
 
