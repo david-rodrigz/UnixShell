@@ -10,10 +10,10 @@
 #include "error.h"
 
 typedef struct {
-  char *file;
-  char **argv;
-  char *inputRedir; 
-  char *outputRedir;
+  char *file; // represents the command to be executed
+  char **argv; // represents the arguments to the command
+  char *inputRedir; // represents the input redirection file
+  char *outputRedir; // represents the output redirection file
 } *CommandRep;
 
 #define BIARGS CommandRep r, int *eof, Jobs jobs
@@ -123,11 +123,31 @@ extern Command newCommand(T_command command) {
   return r;
 }
 
-static void child(CommandRep r, int fg) {
+static void child(CommandRep r, int fg, int currPipeFd[2], int newPipeFd[2]) {
   int eof=0;
   Jobs jobs=newJobs();
-  if (builtin(r,&eof,jobs))
+
+  // check which pipelines are set
+  int isCurrPipeSet = currPipeFd[0] != -1 && currPipeFd[1] != -1;
+  int isNewPipeSet = newPipeFd[0] != -1 && newPipeFd[1] != -1;
+
+  // execute built in command if it exists and if no pipes are set
+  if (!isCurrPipeSet && !isNewPipeSet && builtin(r,&eof,jobs))
     return;
+  
+  // if current pipe is set
+  if (isCurrPipeSet) {
+    close(currPipeFd[1]); // close the write end
+    dup2(currPipeFd[0], STDIN_FILENO); // set the read end to stdin
+    close(currPipeFd[0]); // close the read end
+  }
+
+  // if new pipe is set
+  if (isNewPipeSet) {
+    close(newPipeFd[0]); // close the read end
+    dup2(newPipeFd[1], STDOUT_FILENO); // set the write end to stdout
+    close(newPipeFd[1]); // close the write end
+  }
 
   // Handle input redirection
   if (r->inputRedir) {
@@ -157,9 +177,14 @@ static void child(CommandRep r, int fg) {
 }
 
 extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
-			int *jobbed, int *eof, int fg) {
+			int *jobbed, int *eof, int fg, int currPipeFd[2], int newPipeFd[2]) {
   CommandRep r=command;
-  if (fg && builtin(r,eof,jobs))
+
+  // check which pipelines are set
+  int isCurrPipeSet = currPipeFd[0] != -1 && currPipeFd[1] != -1;
+  int isNewPipeSet = newPipeFd[0] != -1 && newPipeFd[1] != -1;
+
+  if (!isCurrPipeSet && !isNewPipeSet && fg && builtin(r,eof,jobs))
     return;
   if (!*jobbed) {
     *jobbed=1;
@@ -170,10 +195,14 @@ extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
     ERROR("fork() failed");
   }
   else if (pid==0) {
-    child(r,fg);
+    child(r,fg,currPipeFd,newPipeFd);
   }
   else {
-    // parent process: wait for the child process to finish
+    // parent process: close both ends of currPipeFd and wait for the child process to finish
+    if (isCurrPipeSet) {
+      close(currPipeFd[0]);
+      close(currPipeFd[1]);
+    }
     wait(NULL);
   }
 }

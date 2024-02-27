@@ -34,8 +34,33 @@ extern int sizePipeline(Pipeline pipeline) {
 
 static void execute(Pipeline pipeline, Jobs jobs, int *jobbed, int *eof) {
   PipelineRep r=(PipelineRep)pipeline;
-  for (int i=0; i<sizePipeline(r) && !*eof; i++)
-    execCommand(deq_head_ith(r->processes,i),pipeline,jobs,jobbed,eof,1);
+  
+  // Declare file descriptors to iterate through the pipeline
+  int currPipeFd[2], newPipeFd[2];
+
+  // set pipe file descriptors to 0
+  currPipeFd[0] = -1;
+  currPipeFd[1] = -1;
+  newPipeFd[0] = -1;
+  newPipeFd[1] = -1;
+
+  for (int i=0; i<sizePipeline(r) && !*eof; i++) {
+    // create a new pipe if we are not at the end of the pipeline deque
+    if (i<sizePipeline(r)-1) {
+      // create pipe and check for errors
+      if (pipe(newPipeFd) == -1) {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    // execute the command
+    execCommand(deq_head_ith(r->processes,i),pipeline,jobs,jobbed,eof,1,currPipeFd,newPipeFd);
+
+    // set the new pipe as the current pipe
+    currPipeFd[0]=newPipeFd[0];
+    currPipeFd[1]=newPipeFd[1];
+  }
 }
 
 extern void execPipeline(Pipeline pipeline, Jobs jobs, int *eof) {
