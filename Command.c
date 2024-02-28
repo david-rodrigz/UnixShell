@@ -71,6 +71,14 @@ BIDEFN(cd) {
     ERROR("chdir() failed"); // warn
 }
 
+BIDEFN(source) {
+  char *sourceCommand = malloc(strlen("source ") + strlen(r->argv[1]) + 1);
+  strcpy(sourceCommand, "source ");
+  strcat(sourceCommand, r->argv[1]);
+  system(sourceCommand);
+  free(sourceCommand);
+}
+
 static int builtin(BIARGS) {
   typedef struct {
     char *s;
@@ -80,6 +88,7 @@ static int builtin(BIARGS) {
     BIENTRY(exit),
     BIENTRY(pwd),
     BIENTRY(cd),
+    BIENTRY(source),
     {0,0}
   };
   int i;
@@ -130,10 +139,6 @@ static void child(CommandRep r, int fg, int currPipeFd[2], int newPipeFd[2]) {
   // check which pipelines are set
   int isCurrPipeSet = currPipeFd[0] != -1 && currPipeFd[1] != -1;
   int isNewPipeSet = newPipeFd[0] != -1 && newPipeFd[1] != -1;
-
-  // execute built in command if it exists and if no pipes are set
-  if (!isCurrPipeSet && !isNewPipeSet && builtin(r,&eof,jobs))
-    return;
   
   // if current pipe is set
   if (isCurrPipeSet) {
@@ -171,6 +176,10 @@ static void child(CommandRep r, int fg, int currPipeFd[2], int newPipeFd[2]) {
     close(out);
   }
 
+  // execute built in command if it exists
+  if (builtin(r,&eof,jobs)) {
+    exit(0);
+  }
   execvp(r->argv[0],r->argv);
   ERROR("execvp() failed");
   exit(0);
@@ -194,7 +203,7 @@ extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
   if (pid==-1) {
     ERROR("fork() failed");
   }
-  else if (pid==0) {
+  if (pid==0) {
     child(r,fg,currPipeFd,newPipeFd);
   }
   else {
@@ -203,7 +212,9 @@ extern void execCommand(Command command, Pipeline pipeline, Jobs jobs,
       close(currPipeFd[0]);
       close(currPipeFd[1]);
     }
-    wait(NULL);
+    if (fg) {
+      waitpid(pid,0,0);
+    }
   }
 }
 
