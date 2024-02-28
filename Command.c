@@ -79,6 +79,13 @@ BIDEFN(source) {
   free(sourceCommand);
 }
 
+BIDEFN(wait) {
+  builtin_args(r,0);
+  
+  // wait until all child processes have finished
+  waitpid(-1, 0, 0);
+}
+
 static int builtin(BIARGS) {
   typedef struct {
     char *s;
@@ -89,6 +96,7 @@ static int builtin(BIARGS) {
     BIENTRY(pwd),
     BIENTRY(cd),
     BIENTRY(source),
+    BIENTRY(wait),
     {0,0}
   };
   int i;
