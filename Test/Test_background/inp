@@ -1,5 +1,3 @@
-echo "sleep 2 ; echo this message second" > Test/Test_background/delayed_msg.sh
 source Test/Test_background/delayed_msg.sh &
 echo this message first
 wait
-rm Test/Test_background/delayed_msg.sh
