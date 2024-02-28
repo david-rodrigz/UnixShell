@@ -5,6 +5,8 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "Command.h"
 #include "error.h"
@@ -71,6 +73,14 @@ BIDEFN(cd) {
     ERROR("chdir() failed"); // warn
 }
 
+BIDEFN(history) {
+  builtin_args(r,0);
+  HIST_ENTRY **historyList = history_list();
+  for (int i = 0; historyList[i] != NULL; i++) {
+    printf("%d: %s\n", i, historyList[i]->line);
+  }
+}
+
 BIDEFN(source) {
   char *sourceCommand = malloc(strlen("source ") + strlen(r->argv[1]) + 1);
   strcpy(sourceCommand, "source ");
@@ -95,6 +105,7 @@ static int builtin(BIARGS) {
     BIENTRY(exit),
     BIENTRY(pwd),
     BIENTRY(cd),
+    BIENTRY(history),
     BIENTRY(source),
     BIENTRY(wait),
     {0,0}
