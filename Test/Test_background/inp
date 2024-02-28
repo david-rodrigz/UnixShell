@@ -1,0 +1,3 @@
+source Test/Test_background/delayed_msg.sh &
+echo this message first
+wait
