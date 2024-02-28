@@ -72,10 +72,9 @@ BIDEFN(cd) {
 }
 
 BIDEFN(source) {
-  char *sourceCommand = malloc(strlen("bash -c 'source ") + strlen(r->argv[1]) + strlen("'") + 1);
-  strcpy(sourceCommand, "bash -c 'source ");
+  char *sourceCommand = malloc(strlen("source ") + strlen(r->argv[1]) + 1);
+  strcpy(sourceCommand, "source ");
   strcat(sourceCommand, r->argv[1]);
-  strcat(sourceCommand, "'");
   system(sourceCommand);
   free(sourceCommand);
 }
@@ -178,8 +177,9 @@ static void child(CommandRep r, int fg, int currPipeFd[2], int newPipeFd[2]) {
   }
 
   // execute built in command if it exists
-  if (builtin(r,&eof,jobs))
-    return;
+  if (builtin(r,&eof,jobs)) {
+    exit(0);
+  }
   execvp(r->argv[0],r->argv);
   ERROR("execvp() failed");
   exit(0);
